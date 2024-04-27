@@ -10,12 +10,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Sample {
-  id        Int      @id @default(autoincrement())
-  name      String
-  code      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id          Int    @id @default(autoincrement())
+  username    String @unique
+  email       String @unique
+  password    String @db.LongText
+  displayName String @map("display_name")
+  avatarUrl   String @map("avatar_url") @db.LongText
 
-  @@map("samples") // if you want to use snake_case format
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users") // if you want to use snake_case format
 }
