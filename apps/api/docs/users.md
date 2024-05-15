@@ -1,21 +1,33 @@
-# USER API SPECS
+# USER SPECS API
 
 ## Features
 
-- register
-- login
-- get users
-- get user by username
-- verify / activation / recover account
-- forgot password
-- change password
-- request to become Event Organizer
-- logout account
+- [x] `public` register  
+- [x] `public` login
+- [x] `public` get users
+- [x] `public` verify / activation / recover account
+&nbsp;
+- [x] `shared` get user by username
+- [x] `shared` resend email verify
+&nbsp;
+- [x] `private` get user profile
+- [x] `private` update profile
+- [ ] `private` change email
+- [x] `private` change password
+- [x] `private` forgot password
+- [x] `private` logout account
+&nbsp;
+- [ ] `private` request to become Event Organizer
+&nbsp;
+- [ ] `public` get temporal points by register code 
+- [ ] `public` get discount voucher by successor from register account 
+&nbsp;
+- [ ] `public` 
 
 ---
 ### Register User
 
-Endpoint : POST /api/users
+Endpoint : `POST` /api/users
 
 ##### Request Body Form Data:
 
@@ -26,7 +38,6 @@ Endpoint : POST /api/users
   "password": "",
   "avatar_url": "", // optional
   "display_name": "", // optional || default username
-  "referral_code": "" // optional
 }
 ```
 
@@ -72,7 +83,7 @@ Endpoint : POST /api/users
 ---
 ### Login User
 
-Endpoint : POST /api/users/login
+Endpoint : `POST` /api/users/login
 
 ##### Request Body Form Data:
 
@@ -119,18 +130,47 @@ Endpoint : POST /api/users/login
 
 ---
 ### Get Users
-Endpoint GET /api/users?name=wethefest
+Endpoint `GET` /api/users?name=wethefest
 
 
 ---
 ### Get User by username
-Endpoint GET /api/users/@wethefest
+Endpoint `GET` /api/users/@wethefest
 
 
 ---
 ### Verify / Activation / Recover Account
 
-Endpoint POST /api/users/activation/:userId/:activationCode
+Endpoint `POST` /api/users/verify/:token
+
+##### Response Body (success):
+
+
+```json
+
+  {
+    "status": "OK",
+    "message": "User account activated successfully."
+  }
+
+```
+
+```json
+
+  {
+    "status": "OK",
+    "message": "Your account is already active."
+  }
+
+```
+
+##### Response Body (failed):
+
+
+---
+### Verify / Activation / Recover Account
+
+Endpoint `POST` /api/users/verify/resend
 
 ##### Response Body (success):
 
@@ -167,15 +207,36 @@ Endpoint POST /api/users/activation/:userId/:activationCode
 
 
 ---
-### Forgot Password
-
-
----
-### Forgot Password
-
-
----
 ### Change Password
+
+---
+### Forgot Password
+
+Endpoint : `POST` /api/users/forgot
+
+##### Request Body Form Data:
+
+```json
+{
+  "email": ""
+}
+```
+
+
+##### Response Body (success):
+
+
+```json
+
+  {
+    "status": "OK",
+    "message": "Check your email to reset your password."
+  }
+
+```
+
+---
+### Forgot Password
 
 
 ---

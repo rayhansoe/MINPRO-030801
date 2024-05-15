@@ -1,6 +1,13 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+generator kysely {
+  provider     = "prisma-kysely"
+  output       = "../src/application/db"
+  fileName     = "types.ts"
+  enumFileName = "enums.ts"
+}
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,16 +17,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          Int    @id @default(autoincrement())
-  username    String @unique
-  email       String @unique
-  password    String @db.LongText
-  displayName String @map("display_name")
-  avatarUrl   String @map("avatar_url") @db.LongText
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String @unique
 
-  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   createdAt DateTime @default(now()) @map("created_at")
 
+  users User[]
+
+  @@map("role")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  email         String   @unique
+  password      String   @db.LongText
+  displayName   String   @map("display_name")
+  bio           String?  @db.VarChar(160)
+  avatarUrl     String   @map("avatar_url") @db.LongText
+  isActive      Boolean  @default(false) @map("is_active")
+  roleId        Int      @default(1) @map("role_id")
+  referralCode  String   @unique @map("referral_code") @db.VarChar(32)
+  registerCode  String?  @map("register_code") @db.VarChar(32)
+  loginAttempts Int      @default(0) @map("login_attempts")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  role          Role     @relation(fields: [roleId], references: [id])
+  predecessor   User?    @relation("PredecessorSuccessor", fields: [registerCode], references: [referralCode])
+  successors    User[]   @relation("PredecessorSuccessor")
+
+  @@index([displayName], map: "display_name")
+  @@index([referralCode], map: "referral_code")
+  @@index([registerCode], map: "register_code")
   @@map("users") // if you want to use snake_case format
 }

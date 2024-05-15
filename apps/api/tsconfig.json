@@ -7,9 +7,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "baseUrl": ".",
+    "types": ["./src/custom.d.ts"],
     "paths": {
-      "@/*": ["./src/*"]
+      // "@/*": ["./src/*"]
     }
   },
   // "include": ["src/**/*"],
