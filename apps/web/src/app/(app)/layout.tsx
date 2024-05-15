@@ -1,4 +1,3 @@
-import './globals.css';
 import { Inter as FontSans } from 'next/font/google';
 
 import { cn } from '@/lib/utils';
@@ -34,36 +33,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
 
-  // const data = await fetch('http://localhost:8000/api/users', {
-  //   headers: { Cookie: cookies().toString() }
-  // })
-
   const session = await getSession()
 
-  // const users = await data.json()
-
-  // console.log(users);
-  console.log(session);
-
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head />
-      <body
-        className={cn(
-          'bg-slate-50 dark:bg-slate-950 min-h-screen font-sans antialiased',
-          fontSans.variable,
-        )}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <TailwindIndicator />
-        </ThemeProvider>
-      </body>
-    </html>
+    <div className="relative flex min-h-screen flex-col">
+      <SiteHeader />
+      <div className="flex-1">{children}</div>
+    </div>
   );
 }
