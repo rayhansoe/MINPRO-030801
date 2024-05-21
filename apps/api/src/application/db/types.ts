@@ -5,6 +5,8 @@ export type Generated<T> =
     : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+import type { VoucherType } from './enums';
+
 export type Role = {
   id: Generated<number>;
   name: string;
@@ -27,7 +29,35 @@ export type User = {
   updated_at: Generated<Timestamp>;
   created_at: Generated<Timestamp>;
 };
+export type UserVoucher = {
+  id: Generated<number>;
+  user_id: number;
+  voucher_id: number;
+  is_available: Generated<number>;
+  transaction_id: number | null;
+  expired_at: Timestamp | null;
+  expired_code: string | null;
+  updated_at: Generated<Timestamp>;
+  created_at: Generated<Timestamp>;
+};
+export type Voucher = {
+  id: Generated<number>;
+  name: string;
+  stocks: number | null;
+  author_id: number;
+  is_claimable: Generated<number>;
+  code: string;
+  type: Generated<VoucherType>;
+  discount: number | null;
+  point: number | null;
+  expired_at: Timestamp | null;
+  expired_code: string | null;
+  updated_at: Generated<Timestamp>;
+  created_at: Generated<Timestamp>;
+};
 export type DB = {
   role: Role;
+  user_vouchers: UserVoucher;
   users: User;
+  vouchers: Voucher;
 };

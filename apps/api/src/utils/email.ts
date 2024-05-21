@@ -13,8 +13,8 @@ export const sendEmailVerification: ISendEmailVerify = async ({id, isActive, dis
     id,
     isActive
   }
-  const token = sign(payload, "privateKey", { expiresIn: '1h' })
-  const link = `http://localhost:8000/api/users/verify/${token}`
+  const token = sign(payload, "privateKey")
+  const link = `http://localhost:3000/verify/${token}`
 
   const templatePath = path.join(__dirname, "../templates", "register.html")
   const templateSource = fs.readFileSync(templatePath, 'utf-8')
@@ -35,10 +35,10 @@ export const sendEmailVerification: ISendEmailVerify = async ({id, isActive, dis
 export const sendResetPassword: ISendEmailVerify = async ({id, isActive, displayName, email}) => {
   const payload = {
     id,
-    reset: true,
+    resetPassword: true,
   }
-  const token = sign(payload, "privateKey", { expiresIn: '1h' })
-  const link = `http://localhost:8000/api/users/reset/${token}`
+  const token = sign(payload, "privateKey")
+  const link = `http://localhost:8000/api/users/reset/password/${token}`
 
   console.log(link);
   
@@ -55,6 +55,33 @@ export const sendResetPassword: ISendEmailVerify = async ({id, isActive, display
     from: "designwithme21@gmail.com",
     to: email,
     subject: "Reset Password",
+    html
+  })
+}
+
+export const sendResetEmail: ISendEmailVerify = async ({id, isActive, displayName, email}) => {
+  const payload = {
+    id,
+    resetEmail: true,
+  }
+  const token = sign(payload, "privateKey")
+  const link = `http://localhost:8000/api/users/reset/email/${token}`
+
+  console.log(link);
+  
+
+  const templatePath = path.join(__dirname, "../templates", "reset.html")
+  const templateSource = fs.readFileSync(templatePath, 'utf-8')
+  const compiledTemplate = Handlebars.compile(templateSource)
+  const html = compiledTemplate({
+    name: displayName,
+    link
+  })
+
+  await transporter.sendMail({
+    from: "designwithme21@gmail.com",
+    to: email,
+    subject: "Request Reset Email",
     html
   })
 }

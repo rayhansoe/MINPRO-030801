@@ -16,6 +16,11 @@ export interface UserResponse extends PublicUserResponse {
   createdAt: Date;
 }
 
+export interface UserTokenResponse extends PublicUserResponse {
+  roleId: number;
+  isActive: boolean;
+}
+
 export interface CreateUserRequest {
   username: string;
   email: string;
@@ -43,6 +48,14 @@ export const PublicUserFields = {
   displayName: true,
   avatarUrl: true,
   bio: true,
+}
+
+export const TokenFields = {
+  id: true,
+  username: true,
+  avatarUrl: true,
+  roleId: true,
+  isActive: true,
 }
 
 export const UserFields = {

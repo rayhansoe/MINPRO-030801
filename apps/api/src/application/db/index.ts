@@ -1,11 +1,12 @@
 import { DB } from './types' // this is the Database interface we defined earlier
 import { createPool } from 'mysql2' // do not use 'mysql2/promises'!
+import { createPool as createPoolPromise} from 'mysql2/promise' // do not use 'mysql2/promises'!
 import { Kysely, MysqlDialect } from 'kysely'
 import { logger } from '../logging'
 
 const dialect = new MysqlDialect({
   pool: createPool({
-    database: 'kakas_app',
+    database: 'kitabuatevent',
     host: 'localhost',
     user: 'root',
     password: 'admin',
@@ -36,5 +37,14 @@ const db = new Kysely<DB>({
     }
   }
 })
+
+export const pool = createPoolPromise({
+  database: 'kitabuatevent',
+  host: 'localhost',
+  user: 'root',
+  password: 'admin',
+  port: 3306,
+  connectionLimit: 10,
+});
 
 export default db

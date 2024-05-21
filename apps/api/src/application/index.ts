@@ -15,6 +15,6 @@ app.use(express.json({
 }))
 // app.use(multer().none())
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
-app.use('/public', express.static(path.join(__dirname, '../public')))
+app.use('/public', express.static(path.join(__dirname, '../../public')))
 app.use(publicRouter)
 app.use(errorMiddleware)

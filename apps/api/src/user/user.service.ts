@@ -1,6 +1,6 @@
 
 import { sql } from "kysely";
-import db from "../application/db";
+import db, { pool } from "../application/db";
 import { ResponseError } from "../utils/error.response";
 import { Validation } from "../utils/validation";
 import { CreateUserRequest, PublicUserFields, PublicUserResponse, SigninUserRequest, UpdateProfileRequest, UserFields, UserResponse } from "./user.model";
@@ -15,6 +15,8 @@ import fs from 'fs'
 import { transporter } from "../helpers/nodemailers";
 import { Request } from "express";
 import { sendEmailVerification } from "../utils/email";
+import { deleteFile } from "../utils/file";
+import { getUTCTimestamp } from "../utils/date";
 
 export class UserService {
 
@@ -80,15 +82,22 @@ export class UserService {
 
   static async signup(req: CreateUserRequest): Promise<UserResponse> {
 
-    if (!req.avatarUrl) {
-      req.avatarUrl = 'avatar.png'
-    }
-
-    if (!req.displayName) {
-      req.displayName = req.username
-    }
+    console.log(req, 'req.body');
+    
 
     let userData = Validation.validate(UserValidation.SIGNUP, req)
+
+    if (!userData.avatarUrl) {
+      userData.avatarUrl = 'avatar.png'
+    }
+
+    if (!userData.displayName) {
+      userData.displayName = userData.username
+    }
+
+    if (userData.registerCode === '') {
+      userData.registerCode = null
+    }
 
     let roles = await prisma.role.findMany()
 
@@ -100,11 +109,23 @@ export class UserService {
       })
     }
 
+    if (roles.length <= 1) {
+      await prisma.role.create({
+        data: {
+          name: "ORGANIZER"
+        }
+      })
+    }
+
+    console.log(userData, 'user data');
+
+
     const findUser = await prisma.user.findUnique({
       where: {
         username: userData.username
       }
     })
+    console.log(findUser, 'find user');
 
     // Check Register Code
     if (userData.registerCode) {
@@ -153,10 +174,67 @@ export class UserService {
       }
     })
 
+
+    let vouchers = await prisma.voucher.findMany()
+
+    if (!vouchers.length) {
+      await prisma.voucher.createMany({
+        data: [
+          {
+            name: "Referral Point",
+            authorId: 1,
+            code: '9238rh93rh',
+            type: "POINT",
+            point: 10000,
+            isClaimable: true,
+          },
+          {
+            name: "Referral Discount",
+            authorId: 1,
+            code: '02jd22j3',
+            type: "DISCOUNT",
+            discount: 10,
+            isClaimable: true,
+          },
+        ]
+      })
+    }
+
     await sendEmailVerification({ id: user.id, isActive: user.isActive, displayName: user.displayName, email: user.email })
 
     if (user.registerCode && user.predecessor?.id) {
+      let userDiscount = await prisma.userVoucher.create({
+        data: {
+          userId: user.id,
+          voucherId: 2,
+          expiredAt: new Date(Date.now() + 10 * 60 * 1000),
+          expiredCode: `referral_discount_${user.id}`
+        }
+      })
 
+      let predecessorPoint = await prisma.userVoucher.create({
+        data: {
+          userId: user.predecessor.id,
+          voucherId: 1,
+          expiredAt: new Date(Date.now() + 10 * 60 * 1000),
+          expiredCode: `referral_point_${user.id}_${user.predecessor.id}`
+        }
+      })
+
+      await pool.query(`
+        CREATE EVENT ${userDiscount.expiredCode}
+        ON SCHEDULE AT date_add(now(), INTERVAL 10 MINUTE)
+        DO  
+            DELETE FROM user_vouchers WHERE id='${userDiscount.id}';
+      `)
+
+      await pool.query(`
+        CREATE EVENT ${predecessorPoint.expiredCode}
+        ON SCHEDULE AT date_add(now(), INTERVAL 10 MINUTE)
+        DO
+            DELETE FROM user_vouchers WHERE id='${predecessorPoint.id}';
+      `)
+      
     }
 
     return user
@@ -165,7 +243,7 @@ export class UserService {
   static async signin(req: SigninUserRequest): Promise<UserResponse> {
     let signinData = Validation.validate(UserValidation.SIGNIN, req)
 
-    const findUser = await prisma.user.findFirst({
+    let findUser = await prisma.user.findFirst({
       where: {
         OR: [
           {
@@ -212,7 +290,17 @@ export class UserService {
       throw new ResponseError(403, 'Username or Email or Password is wrong!')
     }
 
-    return findUser
+    const user = await prisma.user.update({
+      where: {
+        id: findUser.id
+      },
+      data: { loginAttempts: 0 },
+      select: {
+        ...UserFields
+      }
+    })
+
+    return user!
 
   }
 
@@ -236,6 +324,28 @@ export class UserService {
     })
   }
 
+  static async getUserVouchers(id: number) {
+    return await prisma.user.findUnique({
+      where: { id },
+      select: {
+        userVouchers: {
+          select: {
+            expiredAt: true,
+            voucher: {
+              select: {
+                name: true,
+                expiredAt: true,
+                type: true,
+                discount: true,
+                point: true
+              }
+            }
+          }
+        }
+      }
+    })
+  }
+
   static async getUserByUsername(username: string, req: Request): Promise<PublicUserResponse | UserResponse | null> {
     const fields = req.user?.id ? UserFields : PublicUserFields
     return await prisma.user.findUnique({
@@ -249,9 +359,13 @@ export class UserService {
   static async updateProfile(req: Request, body: UpdateProfileRequest): Promise<UserResponse> {
 
     if (req.file) {
-      body.avatarUrl = `http://localhost:8000/public/images/${req.file.filename}`
+      console.log(req.file, 'check file');
+      body.avatarUrl = req.file.filename
     }
-    
+
+    console.log(body, 'check body');
+
+
     const updateProfileData = Validation.validate(UserValidation.UPDATE, body)
 
     let user = await prisma.user.findUnique({
@@ -259,7 +373,7 @@ export class UserService {
         id: req.user?.id
       },
       select: {
-        id: true, 
+        id: true,
         displayName: true,
         avatarUrl: true,
         bio: true
@@ -269,11 +383,12 @@ export class UserService {
     // remove old pict
     if (updateProfileData.avatarUrl && user?.avatarUrl !== 'avatar.png') {
       console.log('remove old pict');
-      
+
+      await deleteFile(user?.avatarUrl!)
     }
 
     console.log(updateProfileData, 'HEYYYYY');
-    
+
 
     let updatedUser = await prisma.user.update({
       where: {

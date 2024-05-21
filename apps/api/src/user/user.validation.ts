@@ -22,10 +22,10 @@ export class UserValidation {
     username: v.string([v.minLength(5, 'Should be at least 5 character(s)'), v.maxLength(16)]),
     email: v.string([v.email('Email is invalid!'), v.minLength(11, 'Should be at least 11 character(s)'), v.maxLength(256)]),
     password: v.string([v.minLength(8), v.maxLength(512)]),
-    displayName: v.optional(v.string([v.minLength(1), v.maxLength(64)])),
-    avatarUrl: v.optional(v.string([v.minLength(5), v.maxLength(512)])),
-    registerCode: v.optional(v.string([v.length(32)])),
-    bio: v.optional(v.string([v.maxLength(160)])),
+    displayName: v.string([v.minLength(1), v.maxLength(64)]),
+    registerCode: v.string([v.custom((input) => {
+      return input === '' || (typeof input === 'string' && input.length === 32)
+    }, 'Should be 32 characters')]),
   })
   
   static readonly SIGNIN: v.BaseSchema = v.object({
