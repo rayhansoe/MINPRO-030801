@@ -1,10 +1,8 @@
-import App from './app';
+import { logger } from "./application/logging.js";
+import { app } from "./application/index.js";
 
-const main = () => {
-  // init db here
+const PORT = 8000
 
-  const app = new App();
-  app.start();
-};
-
-main();
+app.listen(PORT, () => {
+    logger.info(`[API] local:    http://localhost:${PORT}/api`);
+})

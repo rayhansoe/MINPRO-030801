@@ -4,6 +4,7 @@
 node_modules
 .pnp
 .pnp.js
+package-lock.json
 
 # testing
 coverage
@@ -37,3 +38,11 @@ yarn-error.log*
 
 # others
 dist
+apps/next
+apps/remix
+apps/astro
+apps/solid
+apps/start
+apps/api/public/images/IMG*
+
+dump
